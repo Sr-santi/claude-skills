@@ -1,0 +1,5 @@
+# Public repo: only skills listed here are published. Add a skill with a "!/<name>/" line.
+/*
+!/.gitignore
+!/README.md
+!/whimsical-frontend/
