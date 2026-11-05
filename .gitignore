@@ -3,3 +3,6 @@
 !/.gitignore
 !/README.md
 !/whimsical-frontend/
+!/pr-mechanism-page/
+/pr-mechanism-page/examples/
+/pr-mechanism-page/*.local.md

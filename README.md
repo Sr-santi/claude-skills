@@ -5,6 +5,7 @@ My personal skills for Claude Code. This folder is `~/.claude/skills`; Claude Co
 | Skill | What it does |
 |---|---|
 | [whimsical-frontend](whimsical-frontend/SKILL.md) | Animation, style and CSS techniques from Josh W. Comeau's tutorials: springy hovers, pushable buttons, sparkles, layered shadows, gradients, frosted glass, reduced motion and more. |
+| [pr-mechanism-page](pr-mechanism-page/SKILL.md) | A visual page that explains the mechanism a PR (or a stack of PRs) proposes, compares it with published references, and backs it with local simulations on synthetic data. Includes a reference library and sandbox scripts. |
 
 ## Install
 
