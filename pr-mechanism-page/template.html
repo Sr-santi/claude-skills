@@ -1,0 +1,157 @@
+<title>NAME OF THE MECHANISM</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (~72ch); wide figures scroll inside .scroll. Each mechanism = How / Reference / Simulation / What we saw. Swap tokens per subject, keep the shape. */
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --ink:#15202b; --muted:#5b6876; --line:#d9dfe6;
+  --accent:#2456c9; --accent-soft:#e3ebfb; --s2:#c2610c; --s2-soft:#fbeadb;
+  --ok:#1b7a4c; --ok-soft:#dff2e8; --bad:#b42318; --bad-soft:#fbe4e1; --mute-mark:#b9c2cc;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Public Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1319; --surface:#151c25; --ink:#e5eaf0; --muted:#97a3b2; --line:#283240;
+  --accent:#7ea4ff; --accent-soft:#1b2a4a; --s2:#f2a25c; --s2-soft:#3a2716;
+  --ok:#5cc596; --ok-soft:#14301f; --bad:#ff8a7a; --bad-soft:#3b1a17; --mute-mark:#4a5562; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1319; --surface:#151c25; --ink:#e5eaf0; --muted:#97a3b2; --line:#283240;
+  --accent:#7ea4ff; --accent-soft:#1b2a4a; --s2:#f2a25c; --s2-soft:#3a2716;
+  --ok:#5cc596; --ok-soft:#14301f; --bad:#ff8a7a; --bad-soft:#3b1a17; --mute-mark:#4a5562; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+main{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+.col{max-width:72ch}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3rem);letter-spacing:-.01em}
+h2{font-size:1.65rem}
+h3{font-size:1.1rem}
+p{margin:0}
+.stack{display:flex;flex-direction:column;gap:14px}
+.eyebrow{font:600 .75rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:1.1rem;color:var(--ink)}
+.muted{color:var(--muted)}
+code,.mono{font-family:var(--mono);font-size:.85em}
+a{color:var(--accent)}
+.banner{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.banner b{white-space:nowrap}
+.pill{display:inline-block;font:600 .72rem/1 var(--mono);padding:4px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.pill.sim{background:var(--s2-soft);color:var(--s2)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+figure{margin:0;display:flex;flex-direction:column;gap:10px}
+figcaption{font-size:.9rem;color:var(--muted);max-width:72ch}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+svg{display:block;max-width:100%;height:auto}
+svg{fill:var(--ink)}
+svg text{font-family:var(--body)}
+.mech{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px}
+.mech > *{min-width:0}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;font-size:.95rem}
+.kv dt{font:600 .75rem/1.9 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kv dd{margin:0}
+.finding{border-left:3px solid var(--s2);padding:4px 0 4px 14px}
+.finding.bad{border-color:var(--bad)}
+.finding.ok{border-color:var(--ok)}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .72rem/1.3 var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+tr.hit td{background:var(--ok-soft)}
+tr.miss td{background:var(--bad-soft)}
+.controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;font-size:.92rem}
+.controls label{display:flex;gap:8px;align-items:center}
+input[type=range]{accent-color:var(--accent);width:180px}
+button.tab{font:600 .85rem var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px;border-radius:8px;cursor:pointer}
+button.tab[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem;color:var(--muted)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+.ask li{margin-bottom:8px}
+.ask{padding-left:20px;margin:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px}
+.grid2 > *{min-width:0}
+.asof{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.asof{grid-template-columns:1fr}}
+.asof .panel{padding:12px}
+.ver{font:600 .78rem var(--mono);padding:6px 8px;border-radius:6px;margin-top:6px}
+.ver.jun{background:var(--s2-soft);color:var(--s2)}
+.ver.sep{background:var(--accent-soft);color:var(--accent)}
+footer{font-size:.85rem;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.bar{transition:width .3s ease}}
+</style>
+
+<main>
+<header class="stack">
+  <span class="eyebrow">REPO · PRs #A → #B · read YYYY-MM-DD</span>
+  <h1>NAME</h1>
+  <p class="lede col">Two or three sentences: what the change does end to end, in the reader's words.</p>
+  <div class="banner col"><span class="pill sim">SIMULATED</span><p>Say exactly what ran (commit, real functions), on what data (synthetic), where (local, no network), and that nothing touched staging or production.</p></div>
+</header>
+
+<section class="stack">
+  <span class="eyebrow">1 · The mechanism</span>
+  <h2>CLAIM AS A HEADLINE</h2>
+  <figure>
+    <div class="scroll panel"><!-- hand SVG: boxes = steps, labelled arrows, PR number in each box; accent = decides, s2 = external input, dashed = other owner --></div>
+    <figcaption>What the picture shows, one sentence.</figcaption>
+  </figure>
+  <div class="scroll"><table><!-- PR | what it adds | migration | status pills --></table></div>
+</section>
+
+<!-- One section per mechanism. Optional "Before / after" figure pair when the change is a behaviour or UI change. -->
+<section class="stack">
+  <span class="eyebrow">2 · MECHANISM · #PR</span>
+  <h2>CLAIM AS A HEADLINE</h2>
+  <div class="mech">
+    <dl class="kv">
+      <dt>How</dt><dd>The mechanism in 2-4 sentences, with the real constants and file names.</dd>
+      <dt>Reference</dt><dd>Named source + link + the one number or idea it gives; say matches / differs.</dd>
+    </dl>
+    <div class="stack">
+      <p><span class="pill sim">simulated</span> What ran, on what data, which numbers are invented.</p>
+      <div class="finding"><b>What we saw:</b> the result in one or two sentences, with the number.</div>
+    </div>
+  </div>
+  <figure><div class="panel"><svg id="chart1" viewBox="0 0 900 300" role="img" aria-label="CLAIM"></svg></div><figcaption>…</figcaption></figure>
+</section>
+
+<section class="stack">
+  <span class="eyebrow">N · Against common practice</span>
+  <h2>Where it matches and where it differs</h2>
+  <div class="scroll"><table><thead><tr><th>Piece</th><th>Author's choice</th><th>Common practice</th><th>Read</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section class="stack col">
+  <span class="eyebrow">N · From the simulations</span>
+  <h2>What to ask AUTHOR</h2>
+  <ol class="ask"><li><b>Topic.</b> Question or fix, with file:line.</li></ol>
+</section>
+
+<footer class="stack col">
+  <span class="eyebrow">How this was made</span>
+  <p>Commit, container/image and flags, synthetic data, seeds and trial counts, script names.</p>
+  <p>Not covered: …</p>
+</footer>
+</main>
+
+<script>
+(function(){
+const NS="http://www.w3.org/2000/svg";
+const el=(n,a={},p)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+// SVG presentation attributes do not resolve var(): move fill/stroke/font-family with var() into inline style. Call after every (re)draw.
+const fixVars=r=>r.querySelectorAll("*").forEach(e=>{for(const a of [...e.attributes])if(["fill","stroke","font-family"].includes(a.name)&&a.value.includes("var(")){e.style.setProperty(a.name,a.value);e.removeAttribute(a.name)}});
+const txt=(p,x,y,s,a={})=>{const t=el("text",Object.assign({x,y},a),p);t.textContent=s;return t};
+
+/* Charts: draw each from embedded data; every mark gets an SVG <title> for hover; label values with text tokens.
+   Useful patterns: horizontal bars (#layers), line + markers (#power),
+   slider-driven interval (#ci), vertical bars (#filter), recomputed table (#rrf), timeline with hatched state (#reqs). */
+
+fixVars(document);
+})();
+</script>
