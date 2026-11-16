@@ -1,0 +1,230 @@
+<title>Change Decisions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* One column of rows: what changed (facts, files, undo, preview) beside a decision strip. Edit only the JSON in #data. */
+:root {
+	--bg: #F6F7F9; --surface: #FFFFFF; --fg: #17202B; --muted: #5C6876; --line: #DDE2E8;
+	--accent: #1F5FD6; --keep: #157A4A; --change: #A86400; --revert: #B42318; --pick: #1F5FD6; --chip: #EEF2F7;
+	--sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+	--mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--bg: #0F141A; --surface: #161D25; --fg: #E6EBF1; --muted: #98A4B3; --line: #2A3441;
+		--accent: #7EA8F5; --keep: #4CC38A; --change: #E6A23C; --revert: #F07167; --pick: #7EA8F5; --chip: #1E2731;
+		color-scheme: dark;
+	}
+}
+:root[data-theme="dark"] {
+	--bg: #0F141A; --surface: #161D25; --fg: #E6EBF1; --muted: #98A4B3; --line: #2A3441;
+	--accent: #7EA8F5; --keep: #4CC38A; --change: #E6A23C; --revert: #F07167; --pick: #7EA8F5; --chip: #1E2731;
+	color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.5; margin: 0; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 32px 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 28px; }
+h1 { font-size: 26px; font-weight: 600; margin: 0; text-wrap: balance; }
+h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 65ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 16px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.group { display: flex; flex-direction: column; gap: 12px; }
+.group-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.where { font-size: 13px; color: var(--muted); }
+.rows { display: flex; flex-direction: column; gap: 12px; }
+.item { background: var(--surface); border: 1px solid var(--line); border-left-width: 4px; border-radius: 8px; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 20px; }
+.item[data-decision="keep"] { border-left-color: var(--keep); }
+.item[data-decision="change"] { border-left-color: var(--change); }
+.item[data-decision="revert"] { border-left-color: var(--revert); }
+.item[data-decision="pick"] { border-left-color: var(--pick); }
+.item h3 { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
+.what { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.facts { margin: 0; padding-left: 18px; font-variant-numeric: tabular-nums; }
+.facts li + li { margin-top: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--mono); font-size: 12px; background: var(--chip); border-radius: 4px; padding: 2px 6px; overflow-wrap: anywhere; }
+.chip.ref { color: var(--accent); }
+.status { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 4px; padding: 2px 6px; background: var(--chip); }
+.status.local { color: var(--change); } .status.pushed { color: var(--keep); } .status.proposed { color: var(--accent); }
+.undo { font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.undo code { background: var(--chip); border-radius: 4px; padding: 2px 6px; color: var(--fg); overflow-wrap: anywhere; }
+.preview { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.shot { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.shot button { padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); cursor: zoom-in; overflow: hidden; display: block; }
+.shot img { display: block; width: 100%; height: auto; max-height: 420px; object-fit: contain; object-position: top; }
+.shot figcaption { font-size: 13px; color: var(--muted); }
+.shot figcaption strong { color: var(--fg); font-weight: 600; margin-right: 6px; }
+.decide { display: flex; flex-direction: column; gap: 8px; min-width: 220px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { flex: 1; font: 500 13px var(--sans); padding: 6px 10px; background: var(--surface); color: var(--muted); border: 0; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { color: #fff; background: var(--pick); }
+.seg button[aria-pressed="true"][data-v="keep"] { background: var(--keep); }
+.seg button[aria-pressed="true"][data-v="change"] { background: var(--change); }
+.seg button[aria-pressed="true"][data-v="revert"] { background: var(--revert); }
+button:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+textarea { font: 13px var(--sans); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; resize: vertical; min-height: 34px; }
+.notyet { background: var(--surface); border: 1px dashed var(--line); border-radius: 8px; padding: 14px 16px; color: var(--muted); }
+.notyet ul { margin: 6px 0 0; padding-left: 18px; }
+.bar { position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.tally { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.copy { font: 600 14px var(--sans); background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; }
+.copied { font-size: 13px; color: var(--keep); }
+pre.out { white-space: pre-wrap; font-family: var(--mono); font-size: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px; margin: 0; }
+dialog { border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 94vh; }
+dialog::backdrop { background: rgb(0 0 0 / 0.72); }
+dialog img { display: block; max-width: 96vw; max-height: 88vh; border-radius: 6px; background: #fff; }
+dialog p { color: #fff; font-size: 13px; padding-top: 8px; text-align: center; }
+@media (max-width: 640px) { .item { grid-template-columns: minmax(0, 1fr); } .decide { min-width: 0; } }
+</style>
+
+<!-- Fill this. choices: omit for Keep/Change/Revert, or give labels to pick between options. preview: 0–3 images; src is the path published through `files`. -->
+<script id="data" type="application/json">
+{
+	"title": "Change Decisions",
+	"lede": "Each change made this session, with its commit and how to undo it. Mark each one, add a note where it should change, then copy the list back to Claude.",
+	"meta": ["16 Nov 2026", "repo or PR", "where the preview ran"],
+	"storageKey": "decision-log-example-v1",
+	"groups": [
+		{ "id": "local", "title": "Applied locally, not pushed", "where": "worktree on top of abc1234" },
+		{ "id": "pushed", "title": "Already pushed", "where": "CI green" }
+	],
+	"items": [
+		{ "id": "example", "group": "local", "status": "local", "ref": "abc1234", "where": "local (wt)",
+			"title": "What the user sees change",
+			"facts": ["Before: the number and its source.", "After: the number, same source."],
+			"files": ["src/path/file.tsx"],
+			"undo": "git revert abc1234",
+			"preview": [
+				{ "src": "img/before.png", "label": "Before", "caption": "what the picture shows" },
+				{ "src": "img/after.png", "label": "After", "caption": "same data, same viewport" }
+			] },
+		{ "id": "pick", "group": "pushed", "status": "proposed", "ref": "#123", "where": "option",
+			"title": "Which layout for the table",
+			"facts": ["A keeps one table; B splits by month."],
+			"choices": ["A", "B", "Neither"] }
+	],
+	"notDone": ["What was left out on purpose, one line each."]
+}
+</script>
+
+<div class="wrap">
+	<header style="display:flex;flex-direction:column;gap:10px">
+		<h1 id="title"></h1>
+		<p class="lede" id="lede"></p>
+		<div class="meta" id="meta"></div>
+	</header>
+	<div id="groups" style="display:flex;flex-direction:column;gap:28px"></div>
+	<div class="notyet" id="notyet" hidden><strong>Not done</strong><ul></ul></div>
+	<pre class="out" id="out" hidden></pre>
+	<div class="bar">
+		<span class="tally" id="tally"></span>
+		<span style="display:flex;gap:10px;align-items:center">
+			<span class="copied" id="copied" hidden>Copied</span>
+			<button class="copy" id="copy" type="button">Copy decisions</button>
+		</span>
+	</div>
+</div>
+<dialog id="zoom" aria-label="Preview"><form method="dialog"><button style="all:unset;cursor:zoom-out;display:block"><img id="zoom-img" alt=""><p id="zoom-cap"></p></button></form></dialog>
+
+<script>
+const DATA = JSON.parse(document.getElementById("data").textContent)
+const DEFAULT = ["keep", "change", "revert"]
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c])
+const label = (v) => v[0].toUpperCase() + v.slice(1)
+let saved = {}
+try { saved = JSON.parse(localStorage.getItem(DATA.storageKey) || "{}") || {} } catch { saved = {} }
+const save = () => { try { localStorage.setItem(DATA.storageKey, JSON.stringify(saved)) } catch {} }
+
+document.title = DATA.title
+document.getElementById("title").textContent = DATA.title
+document.getElementById("lede").textContent = DATA.lede
+document.getElementById("meta").innerHTML = (DATA.meta || []).map((m) => `<span>${esc(m)}</span>`).join("")
+if (DATA.notDone?.length) {
+	const n = document.getElementById("notyet")
+	n.hidden = false
+	n.querySelector("ul").innerHTML = DATA.notDone.map((x) => `<li>${esc(x)}</li>`).join("")
+}
+
+function zoom(p) {
+	document.getElementById("zoom-img").src = p.src
+	document.getElementById("zoom-img").alt = p.caption || p.label || ""
+	document.getElementById("zoom-cap").textContent = [p.label, p.caption].filter(Boolean).join(" · ")
+	document.getElementById("zoom").showModal()
+}
+
+function row(c) {
+	const d = saved[c.id] || {}
+	const choices = c.choices || DEFAULT
+	const el = document.createElement("article")
+	el.className = "item"
+	if (d.decision) el.dataset.decision = DEFAULT.includes(d.decision) ? d.decision : "pick"
+	el.innerHTML = `
+		<div class="what">
+			<div class="chips">${c.status ? `<span class="status ${esc(c.status)}">${esc(c.status)}</span>` : ""}${c.ref ? `<span class="chip ref">${esc(c.ref)}</span>` : ""}${c.where ? `<span class="chip">${esc(c.where)}</span>` : ""}</div>
+			<h3>${esc(c.title)}</h3>
+			${c.facts?.length ? `<ul class="facts">${c.facts.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>` : ""}
+			${c.files?.length ? `<div class="chips">${c.files.map((f) => `<span class="chip">${esc(f)}</span>`).join("")}</div>` : ""}
+			${c.undo ? `<div class="undo">Undo: <code>${esc(c.undo)}</code></div>` : ""}
+		</div>
+		<div class="decide">
+			<div class="seg" role="group" aria-label="Decision for ${esc(c.title)}">
+				${choices.map((v) => `<button type="button" data-v="${esc(v)}" aria-pressed="${d.decision === v}">${esc(label(v))}</button>`).join("")}
+			</div>
+			<label class="where" for="note-${esc(c.id)}">Note</label>
+			<textarea id="note-${esc(c.id)}" rows="2" placeholder="What to change">${esc(d.note || "")}</textarea>
+		</div>
+		${c.preview?.length ? `<div class="preview">${c.preview.map((p, i) => `
+			<figure class="shot"><button type="button" data-i="${i}" aria-label="Enlarge ${esc(p.label || "preview")}"><img src="${esc(p.src)}" alt="${esc(p.caption || p.label || "")}" loading="lazy"></button>
+			<figcaption>${p.label ? `<strong>${esc(p.label)}</strong>` : ""}${esc(p.caption || "")}</figcaption></figure>`).join("")}</div>` : ""}`
+	el.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => {
+		const v = b.dataset.v
+		saved[c.id] = { ...(saved[c.id] || {}), decision: saved[c.id]?.decision === v ? undefined : v }
+		save(); render()
+	}))
+	el.querySelector("textarea").addEventListener("input", (e) => {
+		saved[c.id] = { ...(saved[c.id] || {}), note: e.target.value }
+		save()
+	})
+	el.querySelectorAll(".shot button").forEach((b) => b.addEventListener("click", () => zoom(c.preview[Number(b.dataset.i)])))
+	return el
+}
+
+function render() {
+	const host = document.getElementById("groups")
+	host.innerHTML = ""
+	for (const g of DATA.groups) {
+		const items = DATA.items.filter((x) => x.group === g.id)
+		if (!items.length) continue
+		const sec = document.createElement("section")
+		sec.className = "group"
+		sec.innerHTML = `<div class="group-head"><h2>${esc(g.title)}</h2>${g.where ? `<span class="where">${esc(g.where)}</span>` : ""}</div><div class="rows"></div>`
+		const rows = sec.querySelector(".rows")
+		items.forEach((c) => rows.appendChild(row(c)))
+		host.appendChild(sec)
+	}
+	const counts = {}
+	let open = 0
+	for (const c of DATA.items) { const v = saved[c.id]?.decision; if (v) counts[v] = (counts[v] || 0) + 1; else open++ }
+	document.getElementById("tally").textContent = [...Object.entries(counts).map(([k, n]) => `${n} ${k}`), `${open} undecided`].join(" · ")
+}
+
+function summary() {
+	return DATA.items.map((c) => {
+		const d = saved[c.id] || {}
+		const v = d.decision ? d.decision.toUpperCase() : "UNDECIDED"
+		return `${v} ${c.ref || c.id}${c.where ? ` (${c.where})` : ""} ${c.title}${d.note?.trim() ? `\n  note: ${d.note.trim()}` : ""}`
+	}).join("\n")
+}
+
+document.getElementById("copy").addEventListener("click", () => {
+	const text = summary()
+	const out = document.getElementById("out")
+	const fallback = () => { out.textContent = text; out.hidden = false }
+	const shown = () => { const c = document.getElementById("copied"); c.hidden = false; setTimeout(() => (c.hidden = true), 1800) }
+	try { navigator.clipboard.writeText(text).then(shown, fallback) } catch { fallback() }
+})
+
+render()
+</script>
